@@ -129,7 +129,12 @@ class Converter < ::Prawn::Document
     end
 
     # TODO enable pagenums by default (perhaps upstream?)
-    stamp_page_numbers skip: num_front_matter_pages if doc.attr 'pagenums'
+    if doc.attr? 'footer'
+       stamp_page_numbers doc.attr 'footer', skip: num_front_matter_pages if doc.attr 'pagenums'
+    else
+       stamp_page_numbers '', skip: num_front_matter_pages if doc.attr 'pagenums'
+    end
+     
     add_outline doc, num_toc_levels, toc_page_nums, num_front_matter_pages
     catalog.data[:ViewerPreferences] = [:FitWindow]
 
@@ -1137,18 +1142,25 @@ class Converter < ::Prawn::Document
     end
   end
 
-  def stamp_page_numbers opts = {}
+  def stamp_page_numbers footer_text, opts = {}
     skip = opts[:skip] || 1
     start = skip + 1
     pattern = page_number_pattern
+    # mfw is magic footer width number :-p
+    mfw = 160
+    cfooter = footer_text.center(mfw)
+    print cfooter + "\n"
+    if footer_text.length >= mfw 
+      print "WARNING you should probably use a shorter footer\n"
+    end
     repeat (start..page_count), dynamic: true do
       # don't stamp pages which are imported / inserts
       next if page.imported_page?
       case (align = (page_number - skip).odd? ? :left : :right)
       when :left
-        page_number_label = pattern[:left] % [page_number - skip]
+        page_number_label = pattern[:left] % [page_number - skip] + cfooter
       when :right
-        page_number_label = pattern[:right] % [page_number - skip]
+        page_number_label = cfooter + pattern[:right] % [page_number - skip]
       end
       theme_font :footer do
         canvas do
