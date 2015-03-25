@@ -995,6 +995,18 @@ class Converter < ::Prawn::Document
     layout_prose [(doc.attr? 'revnumber') ? %(#{doc.attr 'version-label'} #{doc.attr 'revnumber'}) : nil, (doc.attr 'revdate')].compact * "\n", align: :center, margin_top: @theme.vertical_rhythm * 5, margin_bottom: 0, normalize: false
   end
 
+    if doc.attr? 'cover-image'
+      # FIXME theme setting
+      move_down @theme.vertical_rhythm * 12
+      # FIXME add API to Asciidoctor for creating blocks like this (extract from extensions module?)
+      image = ::Asciidoctor::Block.new doc, :image, content_model: :empty
+      attrs = { 'target' => (doc.attr 'cover-image'), 'align' => 'center' }
+      image.update_attributes attrs
+      convert_image image
+      # FIXME theme setting
+      move_down @theme.vertical_rhythm * 4
+    end
+
   def layout_cover_page position, doc
     # TODO turn processing of attribute with inline image a utility function in Asciidoctor
     if (cover_image = (doc.attr %(#{position}-cover-image)))
